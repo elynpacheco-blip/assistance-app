@@ -8,12 +8,30 @@ import * as XLSX from 'xlsx';
 import { toTitleCase } from '@/lib/utils';
 
 export default function ReportsPage() {
+  const [availableCycles, setAvailableCycles] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedCycle, setSelectedCycle] = useState('2026c1');
+  const [selectedCycle, setSelectedCycle] = useState('2026c2');
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    async function fetchCycles() {
+      const { data } = await supabase.from('academic_cycles').select('*').order('id', { ascending: false });
+      if (data && data.length > 0) {
+        setAvailableCycles(data);
+        const defaultCycle = data.find(c => c.is_default) || data[0];
+        if (defaultCycle) setSelectedCycle(defaultCycle.id);
+      } else {
+        setAvailableCycles([
+          { id: '2026c2', name: '2026 Ciclo II' },
+          { id: '2026c1', name: '2026 Ciclo I' }
+        ]);
+      }
+    }
+    fetchCycles();
+  }, []);
 
   useEffect(() => {
     async function fetchSubjects() {
@@ -125,7 +143,11 @@ export default function ReportsPage() {
             value={selectedCycle}
             onChange={(e) => setSelectedCycle(e.target.value)}
           >
-            <option value="2026c1">2026 Ciclo I</option>
+            {availableCycles.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name || (c.id === '2026c2' ? '2026 Ciclo II' : c.id === '2026c1' ? '2026 Ciclo I' : c.id)}
+              </option>
+            ))}
           </select>
         </div>
       </header>
