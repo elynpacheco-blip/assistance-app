@@ -50,7 +50,8 @@ export default function AdminAttendancePage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === '200216158') {
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '200216158';
+    if (password === adminPassword) {
       setIsAuthorized(true);
       localStorage.setItem('admin_auth', 'true');
       setError('');

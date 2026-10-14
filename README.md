@@ -1,5 +1,18 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Variables de Entorno (Environment Variables)
+
+Crea un archivo `.env.local` en la raíz del proyecto basándote en [.env.example](file:///c:/Users/evelyn.pacheco/Documents/asistencias/.env.example):
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://kobygvadxvhsgquaznca.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_ZFeSHcfjBef6YQRhkNsiVg_WHnqgLvJ
+
+# Panel de Administración (/admin)
+NEXT_PUBLIC_ADMIN_PASSWORD=200216158
+```
+
 ## Getting Started
 
 First, run the development server:
