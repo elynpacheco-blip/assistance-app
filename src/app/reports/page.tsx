@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ChevronLeft, FileText, Download, Loader2, Link as LinkIcon, Check } from 'lucide-react';
+import { ChevronLeft, FileText, Download, Loader2, Link as LinkIcon, Check, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
 import { toTitleCase } from '@/lib/utils';
@@ -87,7 +87,16 @@ export default function ReportsPage() {
     const subject = subjects.find(s => s.id === selectedSubject);
     if (!subject) return;
     const url = `${window.location.origin}/${selectedCycle}/${subject.hash_id}`;
-    navigator.clipboard.writeText(url);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url);
+    } else {
+      const el = document.createElement('textarea');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -203,11 +212,46 @@ export default function ReportsPage() {
                     Basado en {reportData.totalClasses} clases registradas hasta el {reportData.lastUpdate}
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button className="btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white' }} onClick={copyStudentLink}>
-                    {copied ? <Check size={16} color="#10b981" /> : <LinkIcon size={16} />} 
-                    {copied ? '¡Copiado!' : 'Link Estudiantes'}
-                  </button>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <div style={{ display: 'inline-flex', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <button 
+                      className="btn" 
+                      style={{ 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: 'none', 
+                        borderRight: '1px solid var(--border)',
+                        borderRadius: 0, 
+                        color: 'white' 
+                      }} 
+                      onClick={copyStudentLink}
+                      title="Copiar enlace para compartir con estudiantes"
+                    >
+                      {copied ? <Check size={16} color="#10b981" /> : <LinkIcon size={16} />} 
+                      {copied ? '¡Copiado!' : 'Link Estudiantes'}
+                    </button>
+                    {subjects.find(s => s.id === selectedSubject)?.hash_id && (
+                      <a 
+                        href={`/${selectedCycle}/${subjects.find(s => s.id === selectedSubject)?.hash_id}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="btn"
+                        style={{ 
+                          background: 'rgba(255,255,255,0.05)', 
+                          border: 'none', 
+                          borderRadius: 0, 
+                          color: 'white',
+                          padding: '0 0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textDecoration: 'none'
+                        }}
+                        title="Abrir vista de estudiantes en nueva pestaña"
+                      >
+                        <ExternalLink size={15} />
+                      </a>
+                    )}
+                  </div>
                   <button className="btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'white' }} onClick={exportToExcel}>
                     <Download size={16} /> Exportar Resumen
                   </button>

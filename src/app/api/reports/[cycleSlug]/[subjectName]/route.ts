@@ -7,16 +7,18 @@ export async function GET(
 ) {
   const { cycleSlug, subjectName } = await params;
   
-  // Clean subject name from URL (replace %20 with space, etc)
-  const decodedSubjectName = decodeURIComponent(subjectName).replace(/-/g, ' ');
+  // Support hash_id (with hyphens preserved) and subject names (both with hyphens and spaces)
+  const rawSubjectParam = decodeURIComponent(subjectName).trim();
+  const nameWithSpaces = rawSubjectParam.replace(/-/g, ' ');
+  const normalizedCycle = cycleSlug.toLowerCase();
 
   try {
     // 1. Get the subject and cycle info (lookup by hash_id or name)
     const { data: subject, error: subError } = await supabase
       .from('subjects')
       .select('id, name, academic_cycles(start_date)')
-      .eq('cycle_id', cycleSlug)
-      .or(`hash_id.eq.${decodedSubjectName},name.ilike.${decodedSubjectName}`)
+      .eq('cycle_id', normalizedCycle)
+      .or(`hash_id.eq.${rawSubjectParam},name.ilike.${rawSubjectParam},name.ilike.${nameWithSpaces}`)
       .maybeSingle();
 
     if (subError || !subject) {

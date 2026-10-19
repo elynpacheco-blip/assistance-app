@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { toTitleCase } from '@/lib/utils';
-import { Copy, Check, Loader2 } from 'lucide-react';
+import { Copy, Check, Loader2, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 export default function IdsListPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -56,19 +57,42 @@ export default function IdsListPage() {
                 <td><span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.5rem', borderRadius: '0.4rem', fontSize: '0.8rem' }}>{item.cycle_id}</span></td>
                 <td><code style={{ color: 'var(--primary)', fontWeight: 700 }}>{item.hash_id}</code></td>
                 <td style={{ textAlign: 'center' }}>
-                  <button 
-                    className="btn" 
-                    style={{ 
-                      padding: '0.4rem 0.8rem', 
-                      background: copiedId === item.hash_id ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)',
-                      color: copiedId === item.hash_id ? '#10b981' : 'white',
-                      border: '1px solid ' + (copiedId === item.hash_id ? '#10b981' : 'var(--border)')
-                    }}
-                    onClick={() => copyToClipboard(item.hash_id)}
-                  >
-                    {copiedId === item.hash_id ? <Check size={14} /> : <Copy size={14} />}
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>{copiedId === item.hash_id ? 'Copiado' : 'Copiar ID'}</span>
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                    <button 
+                      className="btn" 
+                      style={{ 
+                        padding: '0.4rem 0.8rem', 
+                        background: copiedId === item.hash_id ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)',
+                        color: copiedId === item.hash_id ? '#10b981' : 'white',
+                        border: '1px solid ' + (copiedId === item.hash_id ? '#10b981' : 'var(--border)')
+                      }} 
+                      onClick={() => copyToClipboard(item.hash_id)}
+                    >
+                      {copiedId === item.hash_id ? <Check size={14} /> : <Copy size={14} />}
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>{copiedId === item.hash_id ? 'Copiado' : 'Copiar ID'}</span>
+                    </button>
+                    <a
+                      href={`/${item.cycle_id}/${item.hash_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn"
+                      style={{
+                        padding: '0.4rem 0.8rem',
+                        background: 'rgba(99, 102, 241, 0.1)',
+                        color: 'var(--primary)',
+                        border: '1px solid var(--border)',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        fontSize: '0.8rem'
+                      }}
+                      title="Abrir vista de estudiantes"
+                    >
+                      <ExternalLink size={14} />
+                      <span>Ver</span>
+                    </a>
+                  </div>
                 </td>
               </tr>
             ))}
