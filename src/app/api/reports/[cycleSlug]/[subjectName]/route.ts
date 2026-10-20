@@ -37,7 +37,8 @@ export async function GET(
     
     const enrolledStudents = (enrollment || [])
       .map((e: any) => e.students)
-      .filter((s: any) => s !== null);
+      .filter((s: any) => s !== null)
+      .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
 
     // 3. Get all attendance records
     const { data: attendanceRecords, error: attError } = await supabase

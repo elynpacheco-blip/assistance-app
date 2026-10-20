@@ -64,7 +64,8 @@ export default function ReportsPage() {
   const exportToExcel = () => {
     if (!reportData?.students) return;
     
-    const dataToExport = reportData.students.map((s: any) => ({
+    const dataToExport = reportData.students.map((s: any, idx: number) => ({
+      'N°': idx + 1,
       'Estudiante': s.name,
       'Cédula': s.cedula,
       'Asistencias': s.attended,
@@ -78,7 +79,7 @@ export default function ReportsPage() {
     
     // Auto-size columns
     const maxWidth = dataToExport.reduce((w: number, r: any) => Math.max(w, r.Estudiante.length), 10);
-    worksheet['!cols'] = [{ wch: maxWidth + 5 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+    worksheet['!cols'] = [{ wch: 6 }, { wch: maxWidth + 5 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
 
     XLSX.writeFile(workbook, `Resumen_Asistencia_${reportData.subject}_${selectedCycle}.xlsx`);
   };
@@ -105,8 +106,9 @@ export default function ReportsPage() {
     if (!reportData?.students || !reportData?.uniqueDates) return;
     
     const dates = reportData.uniqueDates;
-    const dataToExport = reportData.students.map((s: any) => {
+    const dataToExport = reportData.students.map((s: any, idx: number) => {
       const row: any = {
+        'N°': idx + 1,
         'Estudiante': s.name,
         'Cédula': s.cedula
       };
@@ -123,7 +125,7 @@ export default function ReportsPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Detalle');
     
     // Auto-size columns
-    worksheet['!cols'] = [{ wch: 35 }, { wch: 15 }];
+    worksheet['!cols'] = [{ wch: 6 }, { wch: 35 }, { wch: 15 }];
     dates.forEach((_: string, i: number) => {
       worksheet['!cols']?.push({ wch: 12 });
     });
@@ -265,6 +267,7 @@ export default function ReportsPage() {
                 <table>
                   <thead>
                     <tr>
+                      <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                       <th>Estudiante</th>
                       <th style={{ textAlign: 'center' }}>P. I (8 sem)</th>
                       <th style={{ textAlign: 'center' }}>P. II (16 sem)</th>
@@ -273,8 +276,11 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {reportData?.students?.map((student: any) => (
+                    {reportData?.students?.map((student: any, idx: number) => (
                       <tr key={student.cedula}>
+                        <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>
+                          {idx + 1}
+                        </td>
                         <td>
                           <div style={{ fontWeight: 600 }}>{student.name}</div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{student.cedula}</div>

@@ -26,26 +26,116 @@ export const WEEKS_START_DATES: string[] = [
 
 export const START_DATE = new Date('2026-10-12T00:00:00');
 
-export function getWeekAndPartial(date: Date) {
+export interface AcademicStatus {
+  isRegularWeek: boolean;
+  statusType: 'regular' | 'vacation' | 'exams' | 'pre_cycle' | 'post_cycle';
+  currentWeek: number; // 1 to 16
+  partial: 1 | 2;
+  title: string;
+  message?: string;
+  datesDescription?: string;
+}
+
+export function getWeekDateRange(week: number): { start: Date; end: Date; startStr: string; endStr: string } {
+  const index = Math.max(1, Math.min(week, 16)) - 1;
+  const mondayStr = WEEKS_START_DATES[index];
+  const [y, m, d] = mondayStr.split('-').map(Number);
+  const start = new Date(y, m - 1, d);
+  const end = new Date(y, m - 1, d + 6);
+  return {
+    start,
+    end,
+    startStr: mondayStr,
+    endStr: formatDate(end)
+  };
+}
+
+export function getCurrentAcademicStatus(date: Date = new Date()): AcademicStatus {
   const dateStr = formatDate(date);
 
+  // 1. Antes del inicio oficial del ciclo: < 2026-10-12
   if (dateStr < WEEKS_START_DATES[0]) {
-    return { week: 1, partial: 1 };
+    return {
+      isRegularWeek: false,
+      statusType: 'pre_cycle',
+      currentWeek: 1,
+      partial: 1,
+      title: 'Fuera del Período Académico',
+      message: 'El ciclo académico aún no ha iniciado. El inicio oficial de clases del Ciclo II es el 12 de octubre de 2026.',
+      datesDescription: 'Inicio de clases: 12 de Octubre de 2026'
+    };
   }
 
-  if (dateStr >= WEEKS_START_DATES[15]) {
-    return { week: 16, partial: 2 };
-  }
-
-  for (let i = 0; i < 15; i++) {
-    if (dateStr >= WEEKS_START_DATES[i] && dateStr < WEEKS_START_DATES[i + 1]) {
+  // 2. Verificar si la fecha cae en alguna de las 16 semanas regulares de clase
+  for (let i = 0; i < 16; i++) {
+    const { startStr, endStr } = getWeekDateRange(i + 1);
+    if (dateStr >= startStr && dateStr <= endStr) {
       const week = i + 1;
-      const partial = week <= 8 ? 1 : 2;
-      return { week, partial };
+      const partial = (week <= 8 ? 1 : 2) as 1 | 2;
+      return {
+        isRegularWeek: true,
+        statusType: 'regular',
+        currentWeek: week,
+        partial,
+        title: `Semana ${week} en curso`,
+        datesDescription: `${startStr} al ${endStr}`
+      };
     }
   }
 
-  return { week: 16, partial: 2 };
+  // 3. Período de Exámenes del Parcial I: 2026-12-07 al 2026-12-13
+  if (dateStr >= '2026-12-07' && dateStr <= '2026-12-13') {
+    return {
+      isRegularWeek: false,
+      statusType: 'exams',
+      currentWeek: 8,
+      partial: 1,
+      title: 'Período de Exámenes (Parcial I)',
+      message: 'Nos encontramos en la semana de evaluaciones y exámenes del Parcial I (del 7 al 13 de diciembre de 2026). No hay clases regulares en esta semana.',
+      datesDescription: '07-Dic-2026 al 13-Dic-2026'
+    };
+  }
+
+  // 4. Período de Vacancia Fin de Año: 2026-12-21 al 2027-01-03
+  if (dateStr >= '2026-12-21' && dateStr <= '2027-01-03') {
+    return {
+      isRegularWeek: false,
+      statusType: 'vacation',
+      currentWeek: 10,
+      partial: 2,
+      title: 'Período de Vacancia Académica',
+      message: 'Nos encontramos en el receso vacacional de fin de año (del 21 de diciembre de 2026 al 3 de enero de 2027). Las clases regulares se reanudan el 4 de enero de 2027 en la Semana 10.',
+      datesDescription: '21-Dic-2026 al 03-Ene-2027'
+    };
+  }
+
+  // 5. Conclusión de las 16 semanas regulares: posterior a 2027-02-21
+  const week16Range = getWeekDateRange(16);
+  if (dateStr > week16Range.endStr) {
+    return {
+      isRegularWeek: false,
+      statusType: 'post_cycle',
+      currentWeek: 16,
+      partial: 2,
+      title: 'Fuera del Período Académico Regular',
+      message: 'El período de 16 semanas de clases regulares del Ciclo II ha concluido (finalizó el 21 de febrero de 2027). Actualmente nos encontramos en exámenes finales o período intersemestral.',
+      datesDescription: 'Fin de clases regulares: 21 de Febrero de 2027'
+    };
+  }
+
+  return {
+    isRegularWeek: false,
+    statusType: 'post_cycle',
+    currentWeek: 16,
+    partial: 2,
+    title: 'Fuera del Período Académico',
+    message: 'La fecha actual se encuentra fuera de las semanas lectivas regulares.'
+  };
+}
+
+export function getWeekAndPartial(date: Date) {
+  const status = getCurrentAcademicStatus(date);
+  return { week: status.currentWeek, partial: status.partial };
 }
 
 export function getDatesForWeek(week: number) {

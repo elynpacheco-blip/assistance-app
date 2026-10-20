@@ -8,7 +8,9 @@ import {
   formatDate, 
   DAYS_SPANISH, 
   DAYS_ENGLISH_TO_SPANISH,
-  toTitleCase
+  toTitleCase,
+  getCurrentAcademicStatus,
+  type AcademicStatus
 } from '@/lib/utils';
 import Link from 'next/link';
 import { 
@@ -22,7 +24,9 @@ import {
   RefreshCcw,
   FileText,
   Lock,
-  LogOut
+  LogOut,
+  AlertCircle,
+  Coffee
 } from 'lucide-react';
 
 export default function AdminAttendancePage() {
@@ -37,7 +41,8 @@ export default function AdminAttendancePage() {
   
   const [students, setStudents] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<any[]>([]);
-  const [currentWeek, setCurrentWeek] = useState(1);
+  const [academicStatus] = useState<AcademicStatus>(() => getCurrentAcademicStatus());
+  const [currentWeek, setCurrentWeek] = useState<number>(() => getCurrentAcademicStatus().currentWeek);
   const [attendanceData, setAttendanceData] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,12 +87,6 @@ export default function AdminAttendancePage() {
     }
   }, [selectedSubject]);
 
-  useEffect(() => {
-    if (currentWeek) {
-      localStorage.setItem('selected_week', currentWeek.toString());
-    }
-  }, [currentWeek]);
-
   // Fetch cycles on mount
   useEffect(() => {
     if (!isAuthorized) return;
@@ -104,12 +103,9 @@ export default function AdminAttendancePage() {
     }
     fetchCycles();
     
-    const savedWeek = localStorage.getItem('selected_week');
-    if (savedWeek) {
-      setCurrentWeek(parseInt(savedWeek, 10));
-    } else {
-      setCurrentWeek(getWeekAndPartial(new Date()).week);
-    }
+    // Siempre iniciar en la semana en curso
+    localStorage.removeItem('selected_week');
+    setCurrentWeek(getCurrentAcademicStatus().currentWeek);
   }, [isAuthorized]);
 
   // Fetch subjects when cycle changes
@@ -159,7 +155,13 @@ export default function AdminAttendancePage() {
     const endDateStr = formatDate(dates[6]);
     const { data: attData } = await supabase.from('attendance').select('*').eq('subject_id', subjectId).gte('attendance_date', startDateStr).lte('attendance_date', endDateStr);
 
-    if (studentsData) setStudents(studentsData.map((s: any) => s.students));
+    if (studentsData) {
+      const sorted = studentsData
+        .map((s: any) => s.students)
+        .filter(Boolean)
+        .sort((a: any, b: any) => (a?.name || '').localeCompare(b?.name || ''));
+      setStudents(sorted);
+    }
     if (scheduleData) setSchedule(scheduleData);
     const attMap: Record<string, boolean> = {};
     attData?.forEach((record: any) => { attMap[`${record.student_id}_${record.attendance_date}`] = record.is_present; });
@@ -246,6 +248,19 @@ export default function AdminAttendancePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Calendar size={18} color="var(--primary)" />
               <span style={{ fontWeight: 600 }}>Semana {currentWeek}</span>
+              {academicStatus.isRegularWeek && academicStatus.currentWeek === currentWeek && (
+                <span style={{ 
+                  background: 'rgba(16, 185, 129, 0.15)', 
+                  color: '#10b981', 
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '0.1rem 0.45rem', 
+                  borderRadius: '1rem', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 700 
+                }}>
+                  En curso
+                </span>
+              )}
             </div>
             <div style={{ width: '1px', height: '1rem', background: 'var(--border)' }}></div>
             <div style={{ color: currentWeek <= 8 ? 'var(--accent)' : 'var(--primary)', fontWeight: 700, fontSize: '0.85rem' }}>
@@ -256,6 +271,83 @@ export default function AdminAttendancePage() {
       </header>
 
       <main>
+        {!academicStatus.isRegularWeek && (
+          <div 
+            className="card glass animate-fade" 
+            style={{ 
+              marginBottom: '2rem', 
+              padding: '1.25rem 1.5rem', 
+              border: `1px solid ${
+                academicStatus.statusType === 'vacation' 
+                  ? 'rgba(245, 158, 11, 0.4)' 
+                  : academicStatus.statusType === 'exams' 
+                  ? 'rgba(168, 85, 247, 0.4)' 
+                  : 'rgba(59, 130, 246, 0.4)'
+              }`,
+              background: academicStatus.statusType === 'vacation' 
+                ? 'rgba(245, 158, 11, 0.1)' 
+                : academicStatus.statusType === 'exams'
+                ? 'rgba(168, 85, 247, 0.1)'
+                : 'rgba(59, 130, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+              borderRadius: '0.75rem'
+            }}
+          >
+            <div style={{ 
+              background: academicStatus.statusType === 'vacation' 
+                ? 'rgba(245, 158, 11, 0.2)' 
+                : academicStatus.statusType === 'exams'
+                ? 'rgba(168, 85, 247, 0.2)'
+                : 'rgba(59, 130, 246, 0.2)',
+              color: academicStatus.statusType === 'vacation' 
+                ? '#f59e0b' 
+                : academicStatus.statusType === 'exams'
+                ? '#c084fc'
+                : '#60a5fa',
+              padding: '0.75rem',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              {academicStatus.statusType === 'vacation' ? (
+                <Coffee size={24} />
+              ) : (
+                <AlertCircle size={24} />
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontWeight: 700, 
+                fontSize: '1rem', 
+                color: academicStatus.statusType === 'vacation' 
+                  ? '#fbbf24' 
+                  : academicStatus.statusType === 'exams'
+                  ? '#d8b4fe'
+                  : '#93c5fd', 
+                marginBottom: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                flexWrap: 'wrap'
+              }}>
+                <span>{academicStatus.title}</span>
+                {academicStatus.datesDescription && (
+                  <span style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '1rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    {academicStatus.datesDescription}
+                  </span>
+                )}
+              </div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.875rem', lineHeight: '1.4' }}>
+                {academicStatus.message}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="card glass" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             
@@ -300,6 +392,23 @@ export default function AdminAttendancePage() {
                 <div style={{ fontSize: '1rem', fontWeight: 700 }}>Semana {currentWeek}</div>
               </div>
               <button className="btn btn-primary" style={{ padding: '0.75rem' }} onClick={() => setCurrentWeek(w => Math.min(16, w + 1))}><ChevronRight size={20} /></button>
+              {academicStatus.isRegularWeek && currentWeek !== academicStatus.currentWeek && (
+                <button 
+                  className="btn" 
+                  style={{ 
+                    fontSize: '0.75rem', 
+                    padding: '0.5rem 0.75rem', 
+                    background: 'rgba(99, 102, 241, 0.1)', 
+                    color: 'var(--primary)', 
+                    border: '1px solid var(--border)',
+                    whiteSpace: 'nowrap'
+                  }} 
+                  onClick={() => setCurrentWeek(academicStatus.currentWeek)}
+                  title="Volver a la semana en curso"
+                >
+                  Semana actual ({academicStatus.currentWeek})
+                </button>
+              )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               {saving && <span style={{ fontSize: '0.75rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><RefreshCcw size={12} className="animate-spin" /> Guardando...</span>}
@@ -320,6 +429,7 @@ export default function AdminAttendancePage() {
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                   <th style={{ width: '300px' }}>Estudiante</th>
                   {daysToDisplay.map(date => (
                     <th key={date.toISOString()} style={{ textAlign: 'center' }}>
@@ -330,8 +440,11 @@ export default function AdminAttendancePage() {
                 </tr>
               </thead>
               <tbody>
-                {students.map(student => (
+                {students.map((student, idx) => (
                   <tr key={student.id}>
+                    <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>
+                      {idx + 1}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontWeight: 700 }}>{student.name.charAt(0)}</div>

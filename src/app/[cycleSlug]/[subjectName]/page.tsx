@@ -96,6 +96,7 @@ export default function StudentReportPage({
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                   <th>Estudiante</th>
                   <th style={{ textAlign: 'center' }}>P. I (1-8)</th>
                   <th style={{ textAlign: 'center' }}>P. II (9-16)</th>
@@ -104,8 +105,11 @@ export default function StudentReportPage({
                 </tr>
               </thead>
               <tbody>
-                {reportData.students.map((student: any) => (
+                {reportData.students.map((student: any, idx: number) => (
                   <tr key={student.cedula}>
+                    <td style={{ textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>
+                      {idx + 1}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>
